@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 public class PageRankMapper extends Mapper<LongWritable, Text, Text, Text>{
 	protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException{
+		// Input to the mapper is <node_id> <page_rank> <out_degree> [<neighbor1> <neighbor2>....]
 		String line = value.toString();
 		StringTokenizer tokenizer = new StringTokenizer(line);
 		
@@ -20,6 +21,7 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, Text>{
 		
 		Vector<Integer> neighbors = new Vector<Integer>();
 		
+		// Generate a vector of all neighbors
 		for(int i=0; i<degree; i++){
 			neighbors.add(Integer.parseInt(tokenizer.nextToken()));
 		}
@@ -34,6 +36,7 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, Text>{
 			}
 		}
 		
+		// Re-emit the input key, value!
 		context.write(new Text(node_id.toString()), value);
 	}
 }

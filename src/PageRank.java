@@ -39,12 +39,13 @@ public class PageRank {
 					args[1] + "/iteration" + String.valueOf(i+1), //Output File
 					i)); //Iteration
 		
+		// Print the residual value
 		for(Double residue:residueList)
 			System.out.println("Residual Value = " + residue/(NUM_NODES * 10e5));
 	}
 
 	public static Double runPageRank(String input, String output, int i) throws IOException, ClassNotFoundException, InterruptedException{
-		// Self explanatory config stuff
+		// Self explanatory config stuff for the MapReduce job
 		Job job = Job.getInstance(new Configuration());
 		job.setJobName("pr_" + String.valueOf(i));
 		job.setJarByClass(PageRank.class);
@@ -63,7 +64,7 @@ public class PageRank {
 		
 		job.waitForCompletion(true);
 		
-		// Get the counter value and reset it for the next iteration
+		// Get the residual value from the counter and reset it for the next iteration!
 		Double residue = (double) job.getCounters().findCounter(PageRankCounter.RESIDUAL).getValue();
 		job.getCounters().findCounter(PageRankCounter.RESIDUAL).setValue(0L);
 		return residue; 
