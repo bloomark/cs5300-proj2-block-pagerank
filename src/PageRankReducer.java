@@ -22,6 +22,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 		Iterator<Text> iter = values.iterator();
 		Vector<Integer> nodes_in_block = new Vector<Integer>();
 		HashMap<Integer, Double> page_ranks = new HashMap<Integer, Double>();
+		HashMap<Integer, Double> page_ranks_copy = new HashMap<Integer, Double>();
 		HashMap<Integer, Vector<Integer> > incoming_edges = new HashMap<Integer, Vector<Integer> >();
 		HashMap<Integer, Double> BC = new HashMap<Integer, Double>();
 		HashMap<Integer, String> adjecency_list = new HashMap<Integer, String>();
@@ -61,6 +62,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 				neighbors = "";
 				degrees.put(node_id, degree);
 				page_ranks.put(node_id, page_rank);
+				page_ranks_copy.put(node_id, page_rank);
 				nodes_in_block.addElement(node_id);
 				
 				for(int i=0; i<degree; i++){
@@ -83,7 +85,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 		int num_runs = 0; 
 		Double residual_error = Double.MAX_VALUE;
 		HashMap<Integer, Double> new_page_ranks = new HashMap<Integer, Double>();
-		while(num_runs < 5 && residual_error > 0.01)
+		while(num_runs < 5 && residual_error > 0.001)
 		{
 			/*
 			 * Calculate new page ranks
@@ -108,13 +110,23 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 				new_page_ranks.put(cur_node_id, new_page_rank);
 				
 				//Calculate Residual
-				residual_error += Math.abs(new_page_rank - page_ranks.get(cur_node_id))/new_page_rank;
+				residual_error += Math.abs(1.00 - (page_ranks.get(cur_node_id)/new_page_rank));
 			}
-			residual_error = residual_error/nodes_in_block.size();
+			//residual_error = residual_error/nodes_in_block.size();
 			page_ranks = new_page_ranks;
 			num_runs++;
+			residual_error = residual_error/nodes_in_block.size();
 		}
-		Long long_residual_error = (long) (residual_error * 10e5);
+		
+		Double residual_error_for_run = 0.0;
+		for(int i=0; i<nodes_in_block.size(); ++i)
+		{
+			Double page_rank_val      = page_ranks.get(nodes_in_block.elementAt(i));
+			Double page_rank_val_old  = page_ranks_copy.get(nodes_in_block.elementAt(i));
+			residual_error_for_run   += Math.abs((page_rank_val-page_rank_val_old)/page_rank_val);
+		}
+		
+		Long long_residual_error = (long) (residual_error_for_run * 10e5);
 		context.getCounter(PageRankCounter.RESIDUAL).increment(long_residual_error);
 		
 		for(int i=0; i<nodes_in_block.size(); ++i)
@@ -124,22 +136,6 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 			Text value_to_emit = new Text( page_ranks.get(cur_node_id).toString() + " " + degrees.get(cur_node_id).toString() + " " + adjecency_list.get(cur_node_id));
 			context.write(key_to_emit, value_to_emit);
 		}
-		/*
-		Double new_page_rank = CONSTANT_VALUE + DAMPING_FACTOR * page_ranks_to_add;
-		
-		// Recreate mapper input so the reducer can provide meaningful input to the mapper at the start
-		// of the next job.
-		Text key_to_emit = new Text(node_id.toString());
-		String text_value_to_emit = new_page_rank.toString() + " " + degree.toString() + " " + neighbors;
-		Text value_to_emit = new Text(text_value_to_emit.trim());
-		
-		// Update the counter with the residual error.
-		Double residual_error = Math.abs(new_page_rank - page_rank)/new_page_rank;
-		Long long_residual_error = (long) (residual_error * 10e5);
-		context.getCounter(PageRankCounter.RESIDUAL).increment(long_residual_error);
-		
-		context.write(key_to_emit, value_to_emit);
-		*/
 	}
 	
 	public static boolean isBlockID(StringTokenizer tokenizer){

@@ -49,7 +49,7 @@ public class PageRank {
 		
 		residueList.add(runPageRank(args[0], args[1] + "/iteration1", 0));
 		
-		for(int i=1; i<5; i++)
+		for(int i=1; i<10; i++)
 			residueList.add(runPageRank(
 					args[1] + "/iteration" + String.valueOf(i), //Input File 
 					args[1] + "/iteration" + String.valueOf(i+1), //Output File
@@ -57,7 +57,7 @@ public class PageRank {
 		
 		// Print the residual value
 		for(Double residue:residueList)
-			System.out.println("Residual Value = " + residue/(NUM_NODES * 10e5));
+			System.out.println("Residual Value = " + residue/NUM_NODES);
 	}
 
 	public static Double runPageRank(String input, String output, int i) throws IOException, ClassNotFoundException, InterruptedException{
@@ -81,8 +81,10 @@ public class PageRank {
 		job.waitForCompletion(true);
 		
 		// Get the residual value from the counter and reset it for the next iteration!
-		Double residue = (double) job.getCounters().findCounter(PageRankCounter.RESIDUAL).getValue();
+		Long residue = job.getCounters().findCounter(PageRankCounter.RESIDUAL).getValue();
+		Double residual = (double) residue / 10e5;
+		
 		job.getCounters().findCounter(PageRankCounter.RESIDUAL).setValue(0L);
-		return residue; 
+		return residual; 
 	}
 }
