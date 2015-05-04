@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -77,7 +78,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 				adjecency_list.put(node_id, neighbors);
 			}
 		}
-		
+		Collections.sort(nodes_in_block);
 		
 		/*
 		 * We have now generated page_ranks, incoming_edges, BC, adjecency_list, degrees
@@ -107,6 +108,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 					}
 				}
 				new_page_rank = CONSTANT_VALUE + DAMPING_FACTOR * new_page_rank;
+				//page_ranks.put(cur_node_id, new_page_rank);
 				new_page_ranks.put(cur_node_id, new_page_rank);
 				
 				//Calculate Residual
@@ -117,6 +119,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 			num_runs++;
 			residual_error = residual_error/nodes_in_block.size();
 		}
+		System.out.println("Block " + block_id.toString() + " num iterations " + num_runs);
 		
 		Double residual_error_for_run = 0.0;
 		for(int i=0; i<nodes_in_block.size(); ++i)
