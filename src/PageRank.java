@@ -68,7 +68,7 @@ public class PageRank {
 		for(Double residue:residueList)
 			System.out.println("Residual Value = " + residue/NUM_NODES);
 		for(Double residue:numIterList)
-			System.out.println("Residual Value = " + residue);
+			System.out.println("Num Iters = " + residue);
 		
 		PrintWriter writer = new PrintWriter(args[2], "UTF-8");
 		for(Double residue:residueList)
