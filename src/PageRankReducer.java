@@ -86,7 +86,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 		int num_runs = 0; 
 		Double residual_error = Double.MAX_VALUE;
 		HashMap<Integer, Double> new_page_ranks = new HashMap<Integer, Double>();
-		while(num_runs < 15 && residual_error > 0.001)
+		while(num_runs < 5 && residual_error > 0.001)
 		{
 			/*
 			 * Calculate new page ranks

@@ -62,6 +62,8 @@ public class PageRank {
 			i); //Iteration
 			residueList.add(ret_val[0]);
 			numIterList.add(ret_val[1]);
+			if(ret_val[0] < (0.001/685230.0))
+				break;
 		}
 		
 		// Print the residual value
