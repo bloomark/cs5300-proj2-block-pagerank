@@ -69,7 +69,8 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 					Integer neighbour_node = Integer.parseInt(tokenizer.nextToken());
 					if(!incoming_edges.containsKey(neighbour_node))
 						incoming_edges.put(neighbour_node, new Vector<Integer>());
-					incoming_edges.get(neighbour_node).addElement(node_id);
+					if(getBlockId(node_id) == block_id)
+						incoming_edges.get(neighbour_node).addElement(node_id);
 					
 					neighbors = neighbors + neighbour_node.toString() + " ";
 				}
@@ -85,7 +86,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 		int num_runs = 0; 
 		Double residual_error = Double.MAX_VALUE;
 		HashMap<Integer, Double> new_page_ranks = new HashMap<Integer, Double>();
-		while(num_runs < 5 && residual_error > 0.001)
+		while(num_runs < 15 && residual_error > 0.001)
 		{
 			/*
 			 * Calculate new page ranks
@@ -110,10 +111,15 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 				new_page_ranks.put(cur_node_id, new_page_rank);
 				
 				//Calculate Residual
-				residual_error += Math.abs(1.00 - (page_ranks.get(cur_node_id)/new_page_rank));
+				residual_error += Math.abs((new_page_rank - page_ranks.get(cur_node_id))/new_page_rank);
 			}
-			//residual_error = residual_error/nodes_in_block.size();
-			page_ranks = new_page_ranks;
+			for(int i=0; i<nodes_in_block.size(); i++)
+			{
+				Integer node_id = nodes_in_block.elementAt(i);
+				Double new_page_rank = new_page_ranks.get(node_id);
+				page_ranks.put(node_id, new_page_rank);
+			}
+			//page_ranks = new_page_ranks;
 			num_runs++;
 			residual_error = residual_error/nodes_in_block.size();
 		}
@@ -128,6 +134,7 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 		
 		Long long_residual_error = (long) (residual_error_for_run * 10e5);
 		context.getCounter(PageRankCounter.RESIDUAL).increment(long_residual_error);
+		context.getCounter(PageRankCounter.INCREMENTS).increment(num_runs);
 		
 		for(int i=0; i<nodes_in_block.size(); ++i)
 		{
@@ -143,5 +150,22 @@ public class PageRankReducer extends Reducer<Text, Text, Text, Text>{
 		if(tokenizer.nextToken().contains("."))
 			return false;
 		return true;
+	}
+	
+	public Integer getBlockId(int node_id){
+		int approx_block = (int) Math.floor(node_id/10000);
+		
+		if(approx_block == 0) 
+			return 0;
+		else if(approx_block == 68)
+			return 67;
+		
+		while(approx_block > 0 && PageRank.cumulative_block_list[approx_block] > node_id)
+			approx_block--;
+		
+		while(approx_block < 67 && PageRank.cumulative_block_list[approx_block] <= node_id)
+			approx_block++;
+				
+		return approx_block;
 	}
 }

@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,27 +41,44 @@ public class PageRank {
 	 * for the `i`th run is <output>/iteration<i+1>. Counter class to get the residual error from each run.  
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
-		if (args.length != 2){
-			System.out.println("Usage: <input> <output>");
+		if (args.length != 3){
+			System.out.println("Usage: <input> <output> <result_file>");
 			System.exit(1);
 		}
 		
 		List<Double> residueList = new ArrayList<Double>();
+		List<Double> numIterList = new ArrayList<Double>();
+		Double[] ret_val;
+		ret_val = (runPageRank(args[0], args[1] + "/iteration1", 0));
+		residueList.add(ret_val[0]);
+		numIterList.add(ret_val[1]);
 		
-		residueList.add(runPageRank(args[0], args[1] + "/iteration1", 0));
-		
-		for(int i=1; i<10; i++)
-			residueList.add(runPageRank(
+		for(int i=1; i<8; i++)
+		{
+			//residueList.add();
+			ret_val = runPageRank(
 					args[1] + "/iteration" + String.valueOf(i), //Input File 
 					args[1] + "/iteration" + String.valueOf(i+1), //Output File
-					i)); //Iteration
+			i); //Iteration
+			residueList.add(ret_val[0]);
+			numIterList.add(ret_val[1]);
+		}
 		
 		// Print the residual value
 		for(Double residue:residueList)
 			System.out.println("Residual Value = " + residue/NUM_NODES);
+		for(Double residue:numIterList)
+			System.out.println("Residual Value = " + residue);
+		
+		PrintWriter writer = new PrintWriter(args[2], "UTF-8");
+		for(Double residue:residueList)
+			writer.println("Residue Value = " + residue/NUM_NODES);
+		for(Double numIters:numIterList)
+			writer.println("Num Iters = " + numIters);
+		writer.close();
 	}
 
-	public static Double runPageRank(String input, String output, int i) throws IOException, ClassNotFoundException, InterruptedException{
+	public static Double[] runPageRank(String input, String output, int i) throws IOException, ClassNotFoundException, InterruptedException{
 		// Self explanatory config stuff for the MapReduce job
 		Job job = Job.getInstance(new Configuration());
 		job.setJobName("pr_" + String.valueOf(i));
@@ -81,10 +99,14 @@ public class PageRank {
 		job.waitForCompletion(true);
 		
 		// Get the residual value from the counter and reset it for the next iteration!
-		Long residue = job.getCounters().findCounter(PageRankCounter.RESIDUAL).getValue();
+		Long residue        = job.getCounters().findCounter(PageRankCounter.RESIDUAL).getValue();
+		Long num_iterations = job.getCounters().findCounter(PageRankCounter.INCREMENTS).getValue();
+		num_iterations = num_iterations / 68;
 		Double residual = (double) residue / 10e5;
 		
 		job.getCounters().findCounter(PageRankCounter.RESIDUAL).setValue(0L);
-		return residual; 
+		job.getCounters().findCounter(PageRankCounter.INCREMENTS).setValue(0L);
+		Double[] ret_val = {residual, (double)num_iterations};
+		return ret_val;
 	}
 }
