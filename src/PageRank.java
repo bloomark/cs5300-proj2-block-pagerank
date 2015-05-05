@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,8 +25,8 @@ public class PageRank {
 	 * for the `i`th run is <output>/iteration<i+1>. Counter class to get the residual error from each run.  
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
-		if (args.length != 2){
-			System.out.println("Usage: <input> <output>");
+		if (args.length != 3){
+			System.out.println("Usage: <input> <output> <result_file>");
 			System.exit(1);
 		}
 		
@@ -42,6 +43,11 @@ public class PageRank {
 		// Print the residual value
 		for(Double residue:residueList)
 			System.out.println("Residual Value = " + residue/(NUM_NODES * 10e5));
+		
+		PrintWriter writer = new PrintWriter(args[2], "UTF-8");
+		for(Double residue:residueList)
+			writer.println("Residue Value = " + residue/NUM_NODES);
+		writer.close();
 	}
 
 	public static Double runPageRank(String input, String output, int i) throws IOException, ClassNotFoundException, InterruptedException{
